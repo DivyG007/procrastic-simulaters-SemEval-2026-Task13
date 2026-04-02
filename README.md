@@ -1,6 +1,58 @@
 # SemEval-2026 Task 13: Detecting Machine-Generated Code with Multiple Programming Languages, Generators, and Application Scenarios
 
-Please join our Google Group to stay in touch: https://groups.google.com/g/semeval2026-task13
+
+## 🚀 Project Overview
+
+The **Procastic Simulators** project is an implementation for **SemEval-2026 Task 13**, focusing on detecting machine-generated code. This repository contains data loaders, baseline models, improved training notebooks, and evaluation scripts to tackle the challenge across multiple programming languages and LLM generators.
+
+---
+
+## 📁 Repository Structure
+
+```text
+procastic-simulaters-SemEval-2026-Task13/
+├── baselines/              # Foundational starter notebooks
+│   ├── Kaggle_starters/    # Official Kaggle starter implementations
+│   ├── train.py            # Fine-tune CodeBERT for tasks A/B/C
+│   └── predict.py          # Script for batch inference
+├── Improved_Notebooks/     # Advanced experiments and refined models
+│   ├── task-A/            # Stylometric and architectural improvements for Task A
+│   └── task-B/            # Imbalance handling and fine-tuning for Task B
+├── modified_notebooks/     # Optimized versions with specific enhancements
+├── logs/                   # Training logs and experimental results
+├── scorer.py               # Official Macro F1-score calculator
+└── README.md               # Main project documentation
+```
+
+## 📓 Notebooks Overview
+
+### Subtask A: Binary Classification (Human vs. AI)
+
+| Notebook | Description |
+| :--- | :--- |
+| `baselines/Kaggle_starters/Task-A-Baseline-Full-Datset.ipynb` | A robust baseline for Task A using the full dataset. Implements a `CodeClassifierTrainer` capable of switching between standard transformer heads and BiLSTM-augmented heads. |
+| `baselines/Kaggle_starters/Task-A-Baseline-limited.ipynb` | An advanced baseline that introduces **15 hand-crafted stylometric features** integrated via gated fusion and attention pooling. |
+| `Improved_Notebooks/task-A/backbone_and_architecture_changes.ipynb` | Explores architectural modifications, specifically placing a **BiLSTM layer** between the transformer backbone and the classification head. |
+| `Improved_Notebooks/task-A/stylometric_feature_addition.ipynb` | Experimentation with various language-agnostic code features to complement semantic embeddings. |
+| `Improved_Notebooks/task-A/final_model.ipynb` | Production-ready implementation consolidating the most effective techniques for Task A. |
+
+### Subtask B: Multi-class Authorship Detection
+
+| Notebook | Description |
+| :--- | :--- |
+| `baselines/Kaggle_starters/Task-B-Baseline.ipynb` | Colab-optimized baseline for Task B, demonstrating HuggingFace dataset integration. |
+| `Improved_Notebooks/task-b/Task-B-Colab.ipynb` | Refined experimental notebook for Task B with optimized data processing for Colab. |
+| `modified_notebooks/task-b-phase-1 (1).ipynb` | Enhanced Task B model using **Weighted Cross-Entropy Loss** and **stratified subsampling** to handle class imbalance. |
+
+### Subtask C & Utilities
+
+| Notebook | Description |
+| :--- | :--- |
+| `baselines/Kaggle_starters/task-C-Baseline.ipynb` | Foundational 4-class classification baseline for Subtask C. |
+| `Improved_Notebooks/HuggingFace_DataLoaders.ipynb` | Utility for efficient loading and tokenization of large-scale code datasets. |
+| `Improved_Notebooks/Inference_Notebook.ipynb` | Dedicated workspace for running inference and generating competition submissions. |
+
+---
 
 ## 🔍 Task Overview
 
@@ -91,63 +143,6 @@ Classify each code snippet as one of:
   - Dataset contains `code`,  `label` (which is label id), and additional meta-data such as programming language (`language`), and the `generator`.
   - Label mappings (`label_to_id.json` and `id_to_label.json`) are provided in each task folder  
 
----
-## 🔒 Data and Model Restrictions
-
-- The use of **additional training data is not allowed**. Participants must use only the official training sets provided for each subtask.
-- It is also **not permitted to use models that have been pre-trained specifically for AI-generated code detection** by third parties.
-- However, participants are allowed to use **general-purpose or code-oriented pre-trained models** (e.g., CodeBERT, StarCoder, etc.)
-
-Please adhere strictly to these rules to ensure a fair comparison across submissions. If you have any doubts, contact task organizers
-
----
-
-## 📤 Submission Format
-
-- Submit a `.csv` file with two columns:
-  - `id`: unique identifier of the code snippet  
-  - `label`: the **label ID** (not the string label)
-
-- Sample submission files are available in each task’s folder  
-- A **single scorer script** (`scorer.py`) is used for all subtasks  
-- Evaluation measure: **macro F1** for all subtasks
-
-## 📢 Kaggle competition
-The Kaggle competitions for the SemEval task are now live! 
-You can submit your system outputs using the following links:
-
-* [Task A](https://www.kaggle.com/t/99673e23fe8546cf9a07a40f36f2cc7e)
-
-* [Task B](https://www.kaggle.com/t/65af9e22be6d43d884cfd6e41cad3ee4)
-
-* [Task C](https://www.kaggle.com/t/005ab8234f27424aa096b7c00a073722)
-
-At the moment, only the **public test set** is available. The leaderboard shown now is for convenience only - it reflects results on the **public test set**.
-We will release the **private test set on Jan. 10**, which will be used for the **final evaluation and ranking**.
-
-Please make sure to **resubmit** your final predictions once the private test set is released, as only those submissions will be considered for the official evaluation. We will inform all participants when the private test data becomes available.
-
-
-## FAQs
-> **Q1: What’s the participation process and how do I register?**
-
-We will release our Kaggle website soon for participant registration. You can register anytime before the evaluation phase begins. Once registered, simply prepare your detection results and submit them before the evaluation deadline.
-
-> **Q2: There are three tasks. Do I have to participate in all of them, or can I choose?**
-
-You are free to participate in one, two, or all three tasks—it’s completely up to you.
-
-> **Q3: What are the important dates for the project?**
-
-We aim to align all key dates with the official SemEval committee schedule and will announce them accordingly.
-
-> **Q4: What methods and technologies can I use?**
-
-Be creative! The only restriction is that we **do not allow** the usage of AI-generated content detectors, trained by third parties and restrict the data usage to the provided training sets. Other than that, feel free to use any methods and technologies you prefer.
-
->**Q5: How do I start?**
-
-You can use [Starter Files](https://github.com/mbzuai-nlp/SemEval-2026-Task13/tree/main/baselines/Kaggle_starters) to have some direction of work. You may experiment with backbone models, training strategy etc. Also feel free to ask questions and share your ideas on **Discussion** page of Kaggle competitions.
 
 ## Important Dates
 - ~~Sample data ready: 15 July 2025~~

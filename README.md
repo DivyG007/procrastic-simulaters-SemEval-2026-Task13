@@ -1,13 +1,13 @@
 # SemEval-2026 Task 13: Detecting Machine-Generated Code with Multiple Programming Languages, Generators, and Application Scenarios
 
 
-## 🚀 Project Overview
+## Project Overview
 
 The **Procastic Simulators** project is an implementation for **SemEval-2026 Task 13**, focusing on detecting machine-generated code. This repository contains data loaders, baseline models, improved training notebooks, and evaluation scripts to tackle the challenge across multiple programming languages and LLM generators.
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 procastic-simulaters-SemEval-2026-Task13/

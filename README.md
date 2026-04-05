@@ -15,10 +15,13 @@ procastic-simulaters-SemEval-2026-Task13/
 │   ├── Kaggle_starters/    # Official Kaggle starter implementations
 │   ├── train.py            # Fine-tune CodeBERT for tasks A/B/C
 │   └── predict.py          # Script for batch inference
-├── Improved_Notebooks/     # Advanced experiments and refined models
-│   ├── task-A/            # Stylometric and architectural improvements for Task A
-│   └── task-B/            # Imbalance handling and fine-tuning for Task B
+├── Improved_Models/        # Advanced experiments and refined models
+│   ├── task_A/             # Stylometric and architectural improvements for Task A
+│   ├── task_B/             # Imbalance handling and fine-tuning for Task B
+│   └── ensemble_pipeline.ipynb # Self-contained Kaggle ensemble notebook
 ├── modified_notebooks/     # Optimized versions with specific enhancements
+├── ensemble_pipeline.py    # Local CLI tool for ensemble prediction
+├── ensemble_notebook.py    # Utility module for notebook integration
 ├── logs/                   # Training logs and experimental results
 ├── scorer.py               # Official Macro F1-score calculator
 └── README.md               # Main project documentation
@@ -50,7 +53,20 @@ procastic-simulaters-SemEval-2026-Task13/
 | :--- | :--- |
 | `baselines/Kaggle_starters/task-C-Baseline.ipynb` | Foundational 4-class classification baseline for Subtask C. |
 | `Improved_Notebooks/HuggingFace_DataLoaders.ipynb` | Utility for efficient loading and tokenization of large-scale code datasets. |
-| `Improved_Notebooks/Inference_Notebook.ipynb` | Dedicated workspace for running inference and generating competition submissions. |
+| `Improved_Models/Inference_Notebook.ipynb` | Dedicated workspace for running inference and generating competition submissions. |
+
+### 🚀 Ensemble Pipeline (CodeBERT + GraphCodeBERT + UniXcoder)
+
+We implement a multi-model ensemble strategy using **Soft Voting**, **Weighted Averaging**, and **Rank Averaging** to combine predictions from three transformer backbones.
+
+| File | Description | Kaggle / Local |
+| :--- | :--- | :--- |
+| `Improved_Models/ensemble_pipeline.ipynb` | **Self-contained** Kaggle notebook. Trains all 3 models, optimizes weights, and runs ensemble. | ✅ **Best for Kaggle** |
+| `ensemble_pipeline.py` | Comprehensive CLI tool for local terminal-based pipeline execution. | 💻 **Local CLI** |
+| `ensemble_notebook.py` | Utility module to easily integrate ensemble logic into other notebooks. | 🛠️ **Utility** |
+
+> [!TIP]
+> If you are running on **Kaggle**, use `ensemble_pipeline.ipynb`. It defines all logic internally and does not require the external `.py` files.
 
 ---
 

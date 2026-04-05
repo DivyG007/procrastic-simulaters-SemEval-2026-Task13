@@ -226,6 +226,30 @@ class SupConLoss(nn.Module):
 
 ---
 
+## Bugfix: Inhomogeneous Array Shape Error (2026-04-06)
+
+**Error:** `ValueError: setting an array element with a sequence. The requested array has an inhomogeneous shape after 1 dimensions. The detected shape was (2,) + inhomogeneous part.`
+
+**Root Cause:** The custom model `RobertaForClassificationWithSupCon` returns `SequenceClassifierOutput(logits=logits, hidden_states=(proj,))`. During evaluation, the HuggingFace Trainer collects both `logits` (shape `[N, 11]`) and `hidden_states` (a tuple of shape `[N, 128]`) as a single `predictions` tuple. When numpy tries to stack them, the mismatched shapes cause the error.
+
+**Fix:** Added `preprocess_logits_for_metrics` callback that strips `hidden_states` before predictions reach `compute_metrics`:
+
+```python
+def _preprocess_logits_for_metrics(logits, labels):
+    if isinstance(logits, tuple):
+        return logits[0]  # extract only the classification logits
+    return logits
+
+trainer = ImprovedTrainer(
+    ...,
+    preprocess_logits_for_metrics=_preprocess_logits_for_metrics,
+)
+```
+
+This ensures `compute_metrics` only sees the logits tensor, not the projection embeddings.
+
+---
+
 ## Evaluation Enhancements
 
 - **Per-class F1** printed at every eval step (not just at end)

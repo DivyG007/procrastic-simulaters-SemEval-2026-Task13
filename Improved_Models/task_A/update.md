@@ -1,29 +1,24 @@
-# GraphCodeBERT Model Update Log (Task A)
+# Analysis of `task-a-divy-v2.ipynb` Results
 
-This document tracks the features, architectural enhancements, and training methods implemented in the `graphcodebert_task_a.ipynb` notebook to tackle SemEval-2026 Task 13 (Machine-Generated Code Detection).
+## Findings / Inferences
 
-## 🚀 Successfully Implemented Features
+1. **HPO Sweep Collapse (Phase 1):** 
+   - Across all 8 Optuna trials, the validation Macro F1 score flatlined at **0.3227**. 
+   - This exact score corresponds to the model acting essentially as a majority/constant class classifier. Learning completely collapsed down to random guessing or static output in every parameter config.
 
-### 1. Extended Sequence Context (via Gradient Checkpointing)
-* **What**: Increased `MAX_LENGTH` from 256 to `512` and enabled `gradient_checkpointing=True` in `TrainingArguments`.
-* **Why**: Algorithmic code (like LeetCode solutions) is frequently longer than 256 tokens. Truncating heavily loses structural information. Gradient checkpointing sacrifices a small amount of training speed to massively reduce GPU memory footprint, allowing 512-length sequences to comfortably train on 16GB Kaggle T4 GPUs.
+2. **Full Training Phase (Phase 2):**
+   - The validation result matched the collapsed HPO result. It predicted the `human` class with 100% recall and 0% precision for `machine`—meaning the model effectively predicted class `human` for *every entirely single example*.
+   - Overall Validation Accuracy was 0.48, Macro F1: **0.3227**.
 
-### 2. Cross-Lingual Robustness via LOLO Validation
-* **What**: Configured a Leave-One-Language-Out (LOLO) validation strategy (controlled by `USE_LOLO_VALIDATION` and `HOLDOUT_LANGUAGE` flags).
-* **Why**: Subtask A tests on *unseen* languages (like Go, PHP, C#). Random, stratified validation splits across all seen languages (C++, Python, Java) produce an artificially inflated F1 score. LOLO validation (e.g., train on Python/Java, validate on C++) gives a much more authentic assessment of how language-agnostic the model features are.
+3. **Holdout Test Set Evaluation:**
+   - On the final 1k test sample (`task_a_test_set_sample.parquet`), it exhibited the exact same collapsed behavior. Accuracy: 0.7770, Macro-F1: **0.4373**. Recall for `1` (Machine) was 0.00.
+   - It only achieved high accuracy because the sample set happens to be heavily imbalanced toward class 0 (Human - 777 samples out of 1000).
 
-### 3. Hard-Example Mining (Focal Loss)
-* **What**: Replaced the standard Cross-Entropy loss with a custom `FocalLossTrainer` ($\alpha=1.0$, $\gamma=2.0$).
-* **Why**: While the dataset is well-balanced, it contains many "easy" samples (terrible LLM code vs extremely idiosyncratic human code) and a subset of very "hard" samples (highly optimized human code vs cutting-edge LLM output). Focal Loss actively down-weights the easily classified examples to force the gradients to solve the difficult borderline boundaries.
+## Root Cause
+The GraphCodeBERT model experienced **Gradient Vanishing/Explosion or Catastrophic Forgetting** almost immediately. Because all trials got stuck at the ~0.32 Macro F1 mark predicting a single class, the learning rate boundaries in the config space might be too high or the initial weights of the newly added layers (or frozen layers) are sabotaging the gradients. It's essentially a local minimum of just guessing "Human".
 
-### 4. Multi-Sample Dropout Architecture
-* **What**: Swapped the standard `RobertaForSequenceClassification` wrapper for a custom `GraphCodeBERTMultiDropModel`.
-* **Why**: A standard linear classification head is prone to overfitting and instability during fine-tuning on massive code corpora. This custom head extracts the `[CLS]` embedding, splits it through multiple parallel dropout layers with sequentially increasing drop rates, and averages the output logits. This acts as an ensemble-within-a-layer, heavily stabilizing validation metrics and avoiding aggressive over-confidence.
-
----
-
-## ⏸️ Deferred Features
-### 1. Dynamic Data Flow Graph (DFG) Extraction
-* **Status**: Paused / Excluded from Notebook preprocessing.
-* **Reason**: True GraphCodeBERT performance requires injecting AST-derived Data Flow Graph variables into the sequence. Doing this dynamically inside a Kaggle notebook via `tree-sitter` for 500,000 algorithmic snippets triggers CPU timeouts.
-* **Resolution**: DFG extraction must be shifted into an **offline dataset preparation pipeline**. The resulting DFG mappings (`position_ids`, `attention_mask`) should be saved explicitly into `.parquet` chunks and uploaded directly to Kaggle.
+## Recommended Improvements for Next Run
+1. **Reduce Learning Rate:** The current range bounds may still be too high for this backbone. Try setting an even smaller range or a very slow warmup scheduling strategy.
+2. **Increase Class Weights logic:** Ensure the CrossEntropyLoss is using class weights correctly. If it just collapses to the majority class over predicting, balancing the dataset or increasing minority class logit weights is required.
+3. **Unfreeze bottom layers gently (Gradual Unfreezing):** Sometimes freezing 4-8 layers of a transformer while attaching an untrained linear head scrambles the representations too quickly. It needs a high learning rate on the head, but a tiny one on the transformer.
+4. **Gradient Clipping:** Ensure `max_grad_norm` is actively clipping during the optimization loop to prevent explosion.

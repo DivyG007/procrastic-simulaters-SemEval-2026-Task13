@@ -1,0 +1,146 @@
+\relax 
+\bibstyle{acl_natbib}
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{orel-etal-2025-codet}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{1}{Introduction}{section.1}{}}
+\citation{feng-etal-2020-codebert}
+\citation{guo2021graphcodebert}
+\citation{guo2022unixcoder}
+\citation{li2023starcoder}
+\citation{orel2025droid}
+\citation{orel-etal-2025-codet}
+\citation{lu2021codexglue}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background and Related Work}{2}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{2}{2}{Background and Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Code-Oriented Pre-trained Models}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Some Other Relevant Benchmarks on Machine-Generated Code Detection}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Task Description}{2}{section.3}\protected@file@percent }
+\newlabel{sec:task}{{3}{2}{Task Description}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Subtask\nobreakspace  {}A: Binary Machine-Generated Code Detection}{2}{subsection.3.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Subtask\nobreakspace  {}A evaluation matrix: Models are tested across seen/unseen language and domain combinations.\relax }}{2}{table.caption.1}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:taskA_eval}{{1}{2}{Subtask~A evaluation matrix: Models are tested across seen/unseen language and domain combinations.\relax }{table.caption.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Subtask\nobreakspace  {}B: Multi-Class Authorship Detection}{2}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Subtask\nobreakspace  {}C: Hybrid Code Detection}{2}{subsection.3.3}\protected@file@percent }
+\citation{feng-etal-2020-codebert}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Subtask\nobreakspace  {}B training set class distribution showing severe imbalance.\relax }}{3}{table.caption.2}\protected@file@percent }
+\newlabel{tab:taskB_dist}{{2}{3}{Subtask~B training set class distribution showing severe imbalance.\relax }{table.caption.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Datasets}{3}{section.4}\protected@file@percent }
+\newlabel{sec:datasets}{{4}{3}{Datasets}{section.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Subtask\nobreakspace  {}C training set class distribution. While less extreme than Subtask\nobreakspace  {}B, the hybrid class is notably underrepresented.\relax }}{3}{table.caption.3}\protected@file@percent }
+\newlabel{tab:taskC_dist}{{3}{3}{Subtask~C training set class distribution. While less extreme than Subtask~B, the hybrid class is notably underrepresented.\relax }{table.caption.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Data Characteristics.}{3}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Proposed Methodology}{3}{section.5}\protected@file@percent }
+\newlabel{sec:method}{{5}{3}{Proposed Methodology}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Phase\nobreakspace  {}1: Baseline Reproduction and Analysis}{4}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Phase\nobreakspace  {}2: Classification Head Engineering}{4}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Phase\nobreakspace  {}3: Handling Class Imbalance (Subtask\nobreakspace  {}B)}{4}{subsection.5.3}\protected@file@percent }
+\newlabel{sec:imbalance}{{5.3}{4}{Phase~3: Handling Class Imbalance (Subtask~B)}{subsection.5.3}{}}
+\newlabel{eq:class_weights}{{1}{4}{Phase~3: Handling Class Imbalance (Subtask~B)}{equation.5.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Planned approaches.}{4}{section*.5}\protected@file@percent }
+\citation{feng-etal-2020-codebert}
+\citation{guo2021graphcodebert}
+\citation{guo2022unixcoder}
+\citation{guo2021graphcodebert}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Phase\nobreakspace  {}4: Ensemble Learning}{5}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Phase\nobreakspace  {}5: Structure-Aware Modeling with GraphCodeBERT (Future Implementation}{5}{subsection.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Evaluation Metrics}{5}{section.6}\protected@file@percent }
+\newlabel{sec:metrics}{{6}{5}{Evaluation Metrics}{section.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Experimental Results}{5}{section.7}\protected@file@percent }
+\newlabel{sec:results}{{7}{5}{Experimental Results}{section.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Baseline Results}{5}{subsection.7.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Baseline results on the validation set.\relax }}{5}{table.caption.6}\protected@file@percent }
+\newlabel{tab:baseline_results}{{4}{5}{Baseline results on the validation set.\relax }{table.caption.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Subtask\nobreakspace  {}A: Generalization Analysis}{5}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.1}Methodology: Classification Heads}{5}{subsubsection.7.2.1}\protected@file@percent }
+\citation{guo2021graphcodebert}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.2}Methodology: Stylometric Feature Inclusion and Smoothing}{6}{subsubsection.7.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.3}Experimental Setup}{6}{subsubsection.7.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Training configuration.}{6}{section*.7}\protected@file@percent }
+\newlabel{tab:ablation_results}{{\caption@xref {tab:ablation_results}{ on input line 471}}{6}{Training configuration}{table.caption.8}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.4}Discussion}{6}{subsubsection.7.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{UniXcoder degrades performance.}{6}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{BiLSTM Heads Underperform with Limited Data}{6}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{UniXcoder without tuning underperforms CodeBERT.}{6}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.5}Final Model}{6}{subsubsection.7.2.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Subtask\nobreakspace  {}A final model vs.\ baseline on the validation set.\relax }}{6}{table.caption.12}\protected@file@percent }
+\newlabel{tab:taskA_final}{{5}{6}{Subtask~A final model vs.\ baseline on the validation set.\relax }{table.caption.12}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.6}Future Work}{6}{subsubsection.7.2.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Full-dataset evaluation.}{6}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{GraphCodeBERT with DFG generation pipeline.}{6}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Ensemble learning over best-performing models.}{7}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Cross-language and cross-generator generalization.}{7}{section*.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Subtask\nobreakspace  {}B: Multi-Class Authorship Detection}{7}{subsection.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.1}Baseline Diagnosis and Bug Analysis}{7}{subsubsection.7.3.1}\protected@file@percent }
+\newlabel{sec:taskB_diagnosis}{{7.3.1}{7}{Baseline Diagnosis and Bug Analysis}{subsubsection.7.3.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Critical bugs in the Subtask\nobreakspace  {}B baseline. All fixed prior to experimentation.\relax }}{7}{table.caption.17}\protected@file@percent }
+\newlabel{tab:taskB_bugs}{{6}{7}{Critical bugs in the Subtask~B baseline. All fixed prior to experimentation.\relax }{table.caption.17}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.2}Training Improvements}{7}{subsubsection.7.3.2}\protected@file@percent }
+\newlabel{sec:taskB_improvements}{{7.3.2}{7}{Training Improvements}{subsubsection.7.3.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.3}Experiment\nobreakspace  {}1: UniXcoder with Initial Improvements}{7}{subsubsection.7.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Analysis.}{7}{section*.19}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Experiment\nobreakspace  {}1 (UniXcoder) training dynamics. Val.\ loss rises after epoch\nobreakspace  {}3 (overfitting), while Macro F1 peaks at epoch\nobreakspace  {}5.7.\relax }}{8}{table.caption.18}\protected@file@percent }
+\newlabel{tab:taskB_exp1_progress}{{7}{8}{Experiment~1 (UniXcoder) training dynamics. Val.\ loss rises after epoch~3 (overfitting), while Macro F1 peaks at epoch~5.7.\relax }{table.caption.18}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.4}Experiment\nobreakspace  {}2: CodeBERT Hyperparameter Search}{8}{subsubsection.7.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Key Observations.}{8}{section*.21}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces HP search results for CodeBERT on Subtask\nobreakspace  {}B. Best: LR\nobreakspace  {}$= 2{\times }10^{-5}$, max\_length\nobreakspace  {}$= 256$.\relax }}{8}{table.caption.20}\protected@file@percent }
+\newlabel{tab:taskB_hp_results}{{8}{8}{HP search results for CodeBERT on Subtask~B. Best: LR~$= 2{\times }10^{-5}$, max\_length~$= 256$.\relax }{table.caption.20}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.5}Experiment\nobreakspace  {}3: Full Training with Best Hyperparameters}{8}{subsubsection.7.3.5}\protected@file@percent }
+\newlabel{sec:taskB_exp3}{{7.3.5}{8}{Experiment~3: Full Training with Best Hyperparameters}{subsubsection.7.3.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Analysis.}{8}{section*.23}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Experiment\nobreakspace  {}3 (CodeBERT, 5 epochs) training dynamics. Val.\ loss decreases throughout, unlike Experiment\nobreakspace  {}1, confirming that the additional regularisation prevents overfitting.\relax }}{9}{table.caption.22}\protected@file@percent }
+\newlabel{tab:taskB_exp3_progress}{{9}{9}{Experiment~3 (CodeBERT, 5 epochs) training dynamics. Val.\ loss decreases throughout, unlike Experiment~1, confirming that the additional regularisation prevents overfitting.\relax }{table.caption.22}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.6}Per-Class Analysis of Best CodeBERT Model}{9}{subsubsection.7.3.6}\protected@file@percent }
+\newlabel{sec:taskB_perclass}{{7.3.6}{9}{Per-Class Analysis of Best CodeBERT Model}{subsubsection.7.3.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces Subtask\nobreakspace  {}B per-class results (Experiment\nobreakspace  {}3: CodeBERT, LR=$2{\times }10^{-5}$, max\_length=256, 5 epochs, Macro F1 = 0.4203).\relax }}{9}{table.caption.24}\protected@file@percent }
+\newlabel{tab:taskB_perclass}{{10}{9}{Subtask~B per-class results (Experiment~3: CodeBERT, LR=$2{\times }10^{-5}$, max\_length=256, 5 epochs, Macro F1 = 0.4203).\relax }{table.caption.24}{}}
+\@writefile{toc}{\contentsline {paragraph}{Class-level analysis.}{9}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Precision--Recall imbalance.}{9}{section*.26}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}Comparison Across Experiments}{9}{subsection.7.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {11}{\ignorespaces Subtask\nobreakspace  {}B experimental progression. ``cls.\ wt.'' = sqrt-scaled class weights, ``sub-$N$K'' = stratified subsample with human capped at $N$K, ``LS'' = label smoothing ($\alpha = 0.1$).\relax }}{9}{table.caption.27}\protected@file@percent }
+\newlabel{tab:taskB_comparison}{{11}{9}{Subtask~B experimental progression. ``cls.\ wt.'' = sqrt-scaled class weights, ``sub-$N$K'' = stratified subsample with human capped at $N$K, ``LS'' = label smoothing ($\alpha = 0.1$).\relax }{table.caption.27}{}}
+\@writefile{toc}{\contentsline {paragraph}{Comparing Experiments.}{9}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.5}Ablation: Impact of Individual Components}{10}{subsection.7.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {12}{\ignorespaces Qualitative ablation: estimated impact of each improvement on Subtask\nobreakspace  {}B.\relax }}{10}{table.caption.29}\protected@file@percent }
+\newlabel{tab:ablation}{{12}{10}{Qualitative ablation: estimated impact of each improvement on Subtask~B.\relax }{table.caption.29}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.6}Subtask\nobreakspace  {}C: Hybrid Code Detection (Baseline)}{10}{subsection.7.6}\protected@file@percent }
+\newlabel{sec:taskC_results}{{7.6}{10}{Subtask~C: Hybrid Code Detection (Baseline)}{subsection.7.6}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.6.1}Baseline Setup}{10}{subsubsection.7.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.6.2}Observations and Challenges}{10}{subsubsection.7.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.6.3}Planned Improvements}{10}{subsubsection.7.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Error Analysis}{11}{section.8}\protected@file@percent }
+\newlabel{sec:error}{{8}{11}{Error Analysis}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}LLM Family Detectability Spectrum}{11}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Precision--Recall Trade-offs}{11}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Overfitting and Generalization Concerns}{11}{subsection.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4}Planned Further Analysis}{11}{subsection.8.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Progress Report}{11}{section.9}\protected@file@percent }
+\newlabel{sec:progress}{{9}{11}{Progress Report}{section.9}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {13}{\ignorespaces Project progress as of March 2026.\relax }}{11}{table.caption.30}\protected@file@percent }
+\newlabel{tab:progress}{{13}{11}{Project progress as of March 2026.\relax }{table.caption.30}{}}
+\@writefile{toc}{\contentsline {paragraph}{Completed work.}{12}{section*.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Ongoing work.}{12}{section*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Planned work.}{12}{section*.33}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10}Timeline}{12}{section.10}\protected@file@percent }
+\newlabel{sec:timeline}{{10}{12}{Timeline}{section.10}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {14}{\ignorespaces Project timeline (Spring 2026).\relax }}{12}{table.caption.34}\protected@file@percent }
+\newlabel{tab:timeline}{{14}{12}{Project timeline (Spring 2026).\relax }{table.caption.34}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {11}Conclusion}{12}{section.11}\protected@file@percent }
+\newlabel{sec:conclusion}{{11}{12}{Conclusion}{section.11}{}}
+\citation{*}
+\bibdata{custom}
+\gdef \@abspage@last{13}

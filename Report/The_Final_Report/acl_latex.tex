@@ -1,0 +1,478 @@
+\documentclass[11pt]{article}
+
+% Change "review" to "final" to generate the final (sometimes called camera-ready) version.
+% Change to "preprint" to generate a non-anonymous version with page numbers.
+\usepackage[preprint]{acl}
+\usepackage{hyperref}
+% Standard package includes
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{tabularx}
+\usepackage{amssymb}
+\usepackage{multirow}
+\usepackage{amsmath}
+
+% For proper rendering and hyphenation of words containing Latin characters (including in bib files)
+\usepackage[T1]{fontenc}
+\usepackage{float}
+
+% This assumes your files are encoded as UTF8
+\usepackage[utf8]{inputenc}
+
+% This is not strictly necessary, and may be commented out,
+% but it will improve the layout of the manuscript,
+% and will typically save some space.
+\usepackage{microtype}
+
+% This is also not strictly necessary, and may be commented out.
+% However, it will improve the aesthetics of text in
+% the typewriter font.
+\usepackage{inconsolata}
+
+\title{Unified Detection of Machine-Generated
+Code Across Languages, Generators, and
+Usage Scenarios}
+
+\author{
+  Divyanshu Giri$^1$ \quad Nikhita Ravi$^1$ \quad Shrish Kadam$^1$ \\
+  $^1$International Institute of Information Technology, Hyderabad \\
+  \texttt{\{divyanshu.giri, nikhita.ravi, shrish.kadam\}@research.iiit.ac.in}
+}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+The rise of generative models has made it increasingly difficult to distinguish machine-generated code from human-written code, especially across different programming languages, domains, and generation techniques. We address SemEval-2026 Task~13, which focuses on detecting machine-generated code under diverse conditions by evaluating generalization to unseen languages, generator families, and code application scenarios. We tackle three subtasks: binary detection of machine-generated code (Subtask~A), multi-class authorship attribution across 11 classes including 10 LLM families (Subtask~B), and hybrid code detection distinguishing human, machine, hybrid, and adversarial code (Subtask~C). Building on the provided CodeBERT baseline, we identify and fix six critical implementation bugs, then systematically improve performance using sqrt-scaled class-weighted loss, label smoothing, stratified subsampling, and cosine scheduling. Our best Subtask~B model achieves Macro~F1 of 0.4203 with CodeBERT after 5 epochs of stable training with monotonically decreasing validation loss, representing a $>$2$\times$ improvement over the corrected baseline. For Subtask~A, ablation studies across backbones and classification heads confirm that CodeBERT with stylometric features provides robust binary detection. For Subtask~C, we reproduce the baseline and design an improved pipeline incorporating focal loss, supervised contrastive learning, and a Bi-LSTM head.\footnote{\url{https://github.com/DivyG007/procastic-simulaters-SemEval-2026-Task13}}
+\end{abstract}
+
+%------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+%------------------------------------------------------------------
+
+Distinguishing between human-written and machine-generated code is a critical challenge in software engineering and academic integrity. As large language models (LLMs) become increasingly capable code generators, the need for robust detection systems grows correspondingly. \textbf{SemEval-2026 Task~13} \cite{orel-etal-2025-codet} formalizes this problem through three subtasks of increasing complexity:
+
+\begin{itemize}
+    \item \textbf{Subtask~A} (Binary Detection): Classify code as \textit{human-written} or \textit{machine-generated}.
+    \item \textbf{Subtask~B} (Multi-Class Authorship): Identify the author as human or one of 10 LLM families.
+    \item \textbf{Subtask~C} (Hybrid Detection): Distinguish fully human, fully machine, hybrid, and adversarial code.
+\end{itemize}
+
+The baseline model provided by the organizers utilizes CodeBERT \cite{feng-etal-2020-codebert}, a bimodal pre-trained model for programming and natural languages. While effective as a starting point, the baseline contains several implementation bugs and treats code primarily as sequence data, potentially missing structural nuances that differentiate human logic from generative patterns.
+
+We address all three subtasks. For Subtask~A, we experiment with backbone models (CodeBERT, UniXcoder) and classification head architectures (Bi-LSTM, dense blocks with stylometric features). For Subtask~B, we identify and fix critical bugs in the baseline, then systematically address the extreme class imbalance through sqrt-scaled class-weighted loss, label smoothing, stratified subsampling, and cosine scheduling. For Subtask~C, we reproduce the official baseline and design an improved pipeline incorporating UniXcoder, focal loss, supervised contrastive learning, and a Bi-LSTM classification head.
+
+%------------------------------------------------------------------
+\section{Related Work}
+\label{sec:related}
+%------------------------------------------------------------------
+
+\subsection{Code-Oriented Pre-trained Models}
+
+Several pre-trained transformer-based models relevant to our work include:
+\begin{itemize}
+    \item \textbf{CodeBERT} \cite{feng-etal-2020-codebert}: A bimodal model pre-trained on natural language--programming language pairs using masked language modeling and replaced token detection. It serves as the official task baseline.
+    \item \textbf{GraphCodeBERT} \cite{guo2021graphcodebert}: Extends CodeBERT by incorporating \textit{data flow graphs} (DFGs) during pre-training, enabling the model to capture semantic-level code structure such as variable dependencies.
+    \item \textbf{UniXcoder} \cite{guo2022unixcoder}: A unified cross-modal pre-trained model that leverages AST (Abstract Syntax Tree) representations alongside code tokens.
+\end{itemize}
+
+\subsection{Machine-Generated Code Detection}
+
+The DROID resource suite \cite{orel2025droid} is the first large-scale benchmark for AI-generated code detection, providing code samples across multiple languages, generators, and domains. The CoDet-M4 system \cite{orel-etal-2025-codet} established initial baselines using CodeBERT fine-tuning, demonstrating that while transformer-based models achieve strong in-distribution performance, generalization to unseen languages and domains remains challenging. The M4 benchmark \cite{wang-etal-2024-m4} addresses analogous challenges for machine-generated text detection across languages and generators, informing our approach to the code domain. DetectGPT \cite{mitchell2023detectgpt} demonstrates zero-shot detection using probability curvature, though its applicability to code remains limited. The CodeXGLUE benchmark \cite{lu2021codexglue} informed our evaluation methodology and model selection.
+
+%------------------------------------------------------------------
+\section{Dataset Details}
+\label{sec:datasets}
+%------------------------------------------------------------------
+
+All data is provided by the task organizers via Kaggle and HuggingFace in Apache Parquet format. Each sample contains: \texttt{code} (source code snippet), \texttt{label} (integer label ID), \texttt{language} (programming language), and \texttt{generator} (LLM family or ``human''). We use the official training and validation splits without additional external data.
+
+\paragraph{Subtask~A.} 500K training samples (238K human, 262K machine) and 100K validation samples, covering C++, Python, and Java in the algorithmic domain. Evaluation extends to unseen languages (Go, PHP, C\#, C, JavaScript) and unseen domains (research, production).
+
+\paragraph{Subtask~B.} 500K training samples with severe class imbalance: 442K human ($\sim$88\%) vs.\ 2K--10K per LLM family (Table~\ref{tab:taskB_dist}). The 10 LLM families are DeepSeek-AI, Qwen, 01-ai, BigCode, Gemma, Phi, Meta-LLaMA, IBM-Granite, Mistral, and OpenAI.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabularx}{\columnwidth}{@{}l r r@{}}
+\toprule
+\textbf{Class} & \textbf{Count} & \textbf{\%} \\ \midrule
+Human & 442,000 & 88.4 \\
+OpenAI & 10,000 & 2.0 \\
+Meta-LLaMA / Qwen / IBM-Granite & 8,000 ea. & 1.6 ea. \\
+Phi & 5,000 & 1.0 \\
+DeepSeek-AI / Mistral & 4,000 ea. & 0.8 ea. \\
+01-ai & 3,000 & 0.6 \\
+BigCode / Gemma & 2,000 ea. & 0.4 ea. \\ \bottomrule
+\end{tabularx}
+\caption{Subtask~B training set class distribution.}
+\label{tab:taskB_dist}
+\end{table}
+
+\paragraph{Subtask~C.} 900K training samples and 200K validation samples with moderate imbalance: 485K human (54\%), 210K machine (23\%), 118K adversarial (13\%), and 85K hybrid (9\%). The hybrid and adversarial classes are particularly challenging because they share surface-level features with fully human-written code.
+
+%------------------------------------------------------------------
+\section{Methodology}
+\label{sec:method}
+%------------------------------------------------------------------
+
+Our approach comprises five phases, building incrementally from baseline reproduction towards improved systems, with Phase~5 deferred due to compute constraints.
+
+\subsection{Phase~1: Baseline Reproduction and Bug Fixing}
+
+We reproduce the official CodeBERT baseline \cite{feng-etal-2020-codebert} using the provided training script. The baseline uses \texttt{microsoft/codebert-base} (125M parameters) with a linear classification head, standard cross-entropy loss, and the AdamW optimizer. Input code is tokenized using the RoBERTa tokenizer with truncation at 512 tokens.
+
+A thorough audit of the baseline revealed \textbf{six implementation bugs} (Table~\ref{tab:taskB_bugs}) that collectively rendered the results misleading. Most critically, the metric computation used \texttt{average='weighted'} instead of \texttt{'macro'} (B1), inflating scores by favoring the 88\% majority class. The \texttt{return\_tensors='pt'} parameter in the tokenization \texttt{map()} call (B2) caused silent tensor corruption during batching. After fixing all bugs, the corrected baseline achieved Macro~F1 $\approx$ 0.22 on Subtask~B validation.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}l X@{}}
+\toprule
+\textbf{ID} & \textbf{Bug Description and Impact} \\ \midrule
+\textbf{B1} & Wrong metric: \texttt{average='weighted'} instead of \texttt{'macro'} F1. \\
+\textbf{B2} & Tensor corruption: \texttt{return\_tensors='pt'} in \texttt{map()}. \\
+\textbf{B3} & Double padding: redundant with \texttt{DataCollatorWithPadding}. \\
+\textbf{B4} & No class weighting: standard CE with 88.4\% human skew. \\
+\textbf{B5} & No early stopping: fixed epochs without val.\ loss monitoring. \\
+\textbf{B6} & Variable mismatch: \texttt{t} instead of \texttt{trainer\_obj}. \\
+\bottomrule
+\end{tabularx}
+\caption{Critical bugs found in the Subtask~B baseline.}
+\label{tab:taskB_bugs}
+\end{table}
+
+\subsection{Phase~2: Classification Head Engineering}
+\label{sec:heads}
+
+We explore three classification head configurations on top of CodeBERT and UniXcoder backbones:
+\begin{itemize}
+    \item \textbf{Linear head}: Single linear projection from the \texttt{[CLS]} pooled representation.
+    \item \textbf{Dense head}: Multi-layer perceptron with batch normalization, ReLU, and dropout ($p{=}0.3$--$0.5$).
+    \item \textbf{BiLSTM head}: Bidirectional LSTM (hidden size 256, bidirectional $\to$ 512-dim) over the full token-level outputs, with attention pooling.
+    \item \textbf{Auxiliary features}: Optional concatenation of stylometric features (average line length, comment density, variable name length, code complexity) with the transformer output.
+\end{itemize}
+
+\subsection{Phase~3: Handling Class Imbalance (Subtask~B)}
+\label{sec:imbalance}
+
+The severe class imbalance in Subtask~B is the largest barrier to high Macro~F1. Naive training causes the model to predict ``human'' for nearly all inputs, achieving $\sim$88\% accuracy but Macro~F1 $\approx$ 0.09. We implement:
+
+\begin{itemize}
+    \item \textbf{Sqrt-scaled class-weighted loss}: Inverse-frequency weights with square-root dampening:
+    \begin{equation}
+    w_c = \sqrt{\frac{N}{C \cdot n_c}}
+    \label{eq:class_weights}
+    \end{equation}
+    where $N$ is the subsampled training size, $C{=}11$, and $n_c$ the count of class $c$.
+
+    \item \textbf{Label smoothing} ($\alpha{=}0.1$): Smoothed targets reduce overconfidence on the dominant human class.
+
+    \item \textbf{Stratified subsampling}: Human class capped at 40K; all minority LLM classes retained. This reduces the dataset from 500K to $\sim$98K with a less skewed distribution.
+
+    \item \textbf{Cosine LR schedule}: Cosine annealing with 6\% linear warmup for smooth convergence.
+
+    \item \textbf{Gradient accumulation}: Batch size 16 with 2 accumulation steps (effective batch 32), balancing T4 GPU memory with gradient stability.
+
+    \item \textbf{Early stopping}: Patience of 3 evaluation rounds monitoring validation Macro~F1.
+\end{itemize}
+
+\subsection{Phase~4: Improved Subtask~C Pipeline}
+\label{sec:taskC_method}
+
+For Subtask~C, we first reproduce the baseline and then design an improved pipeline. After fixing the shared baseline bugs (Table~\ref{tab:taskB_bugs}), we extend the architecture with:
+\begin{itemize}
+    \item \textbf{UniXcoder backbone}: Cross-modal pretraining with AST awareness to capture structural code patterns distinguishing hybrid and adversarial code.
+    \item \textbf{Bi-LSTM classification head}: Captures sequential patterns across the full code embedding, critical for hybrid code where human-to-machine transitions occur mid-sequence.
+    \item \textbf{Focal loss} ($\gamma{=}2.0$) with sklearn-balanced class weights (clipped at 10): Down-weights easy human examples while strengthening minority-class signal.
+    \item \textbf{Supervised contrastive loss}: Auxiliary projection head (768$\to$128) with SupConLoss (temperature 0.07), combined as $\mathcal{L} = 0.85 \cdot \mathcal{L}_{\text{focal}} + 0.15 \cdot \mathcal{L}_{\text{SupCon}}$.
+    \item \textbf{Layer-wise LR decay} (factor 0.9): Lower transformer layers receive smaller learning rates to preserve general code representations.
+    \item \textbf{Per-class threshold calibration}: Post-training sweep of decision thresholds on the validation set.
+\end{itemize}
+
+\subsection{Phase~5: Structure-Aware Modeling (Deferred)}
+
+We hypothesize that GraphCodeBERT \cite{guo2021graphcodebert}, which incorporates data flow graph information, could capture variable dependency patterns and long-range semantic relationships that differ between human and machine code. However, dynamic DFG extraction for 500K+ code snippets via tree-sitter caused CPU timeouts in the Kaggle environment, requiring an offline preprocessing pipeline that we could not complete within the compute constraints.
+
+%------------------------------------------------------------------
+\subsection{Training Setup}
+\label{sec:training_setup}
+%------------------------------------------------------------------
+
+All experiments were conducted on a single NVIDIA Tesla T4 GPU (16\,GB VRAM) via Kaggle Notebooks. Table~\ref{tab:training_config} summarizes the key hyperparameters for each subtask.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}l c c c@{}}
+\toprule
+\textbf{Parameter} & \textbf{A} & \textbf{B} & \textbf{C (base)} \\ \midrule
+Backbone & CodeBERT & CodeBERT & CodeBERT \\
+Max length & 512 & 256 & 128 \\
+Batch size & 16 & 16 & 16 \\
+Grad. accum. & 1 & 2 & 1 \\
+LR & $2{\times}10^{-5}$ & $2{\times}10^{-5}$ & $2{\times}10^{-5}$ \\
+Epochs & 10 & 5 & 5 \\
+LR schedule & Linear & Cosine & Linear \\
+Weight decay & 0.01 & 0.05 & 0.01 \\
+Precision & fp32 & fp16 & fp32 \\
+\bottomrule
+\end{tabularx}
+\caption{Training configurations by subtask.}
+\label{tab:training_config}
+\end{table}
+
+%------------------------------------------------------------------
+\section{Evaluation}
+\label{sec:metrics}
+%------------------------------------------------------------------
+
+The primary evaluation metric for all subtasks is \textbf{Macro F1-score}, the unweighted mean of per-class F1 scores, as specified by the task leaderboard. We additionally report accuracy and per-class precision, recall, and F1 for detailed error analysis. For Subtask~A, we report setting-wise breakdown across seen/unseen language $\times$ domain combinations.
+
+Subtask~A evaluates generalization across four settings: (i)~seen languages, seen domain; (ii)~unseen languages, seen domain; (iii)~seen languages, unseen domain; (iv)~unseen languages, unseen domain (Table~\ref{tab:taskA_eval}).
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabularx}{\columnwidth}{@{}l l X@{}}
+\toprule
+\textbf{Setting} & \textbf{Language} & \textbf{Domain} \\ \midrule
+(i) Seen L, Seen D & C++, Py, Java & Algorithmic \\
+(ii) Unseen L, Seen D & Go, PHP, C\#, etc. & Algorithmic \\
+(iii) Seen L, Unseen D & C++, Py, Java & Research, Production \\
+(iv) Unseen L, Unseen D & Go, PHP, C\#, etc. & Research, Production \\ \bottomrule
+\end{tabularx}
+\caption{Subtask~A evaluation settings.}
+\label{tab:taskA_eval}
+\end{table}
+
+%------------------------------------------------------------------
+\section{Analysis of Results}
+\label{sec:results}
+%------------------------------------------------------------------
+
+\subsection{Baseline Results}
+
+Table~\ref{tab:baseline_results} summarizes baseline performance across all three subtasks.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabularx}{\columnwidth}{@{}l X c c@{}}
+\toprule
+\textbf{Task} & \textbf{Model} & \textbf{Macro F1} & \textbf{Acc.} \\ \midrule
+A & CodeBERT (baseline) & 0.34 & 0.33 \\
+B & CodeBERT (corrected) & $\sim$0.22 & 0.88 \\
+C & CodeBERT (baseline, 10\%) & 0.51 & 0.81 \\
+\bottomrule
+\end{tabularx}
+\caption{Baseline results on the validation set. Subtask~B accuracy is misleadingly high because the model predicts ``human'' for nearly all samples.}
+\label{tab:baseline_results}
+\end{table}
+
+\subsection{Positive Results}
+
+\subsubsection{Subtask~A Ablation and Final Model}
+
+We conducted ablation studies on a 2K-sample subset, evaluating six configurations across two backbones and three head types (Table~\ref{tab:ablation_results}). All models used AdamW, LR $2{\times}10^{-5}$, batch size 16, max length 512, and seed 42.
+
+\begin{table}[ht]
+\centering
+\label{tab:ablation_results}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{Acc.} & \textbf{Macro F1} & \textbf{Wtd.\ F1} & \textbf{$\Delta$F1} \\
+\midrule
+CodeBERT-Base (Baseline) & 0.42 & 0.42 & 0.45 & --- \\
+UniXcoder-Base & 0.31 & 0.30 & 0.26 & $-0.12$ \\
+CodeBERT + BiLSTM + Dense & 0.35 & 0.35 & 0.34 & $-0.07$ \\
+UniXcoder + BiLSTM + Dense & 0.30 & 0.29 & 0.26 & $-0.13$ \\
+CodeBERT + Smooth.\ + 7~Sty. & 0.42 & 0.42 & 0.45 & $\approx 0.00$ \\
+UniXcoder + Smooth.\ + 7~Sty. & 0.40 & 0.40 & 0.39 & $-0.02$ \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Subtask~A ablation results on the small evaluation set. ``Sty.'' = stylometric features, ``Smooth.'' = label smoothing.}
+\end{table}
+
+Dense and BiLSTM heads degrade performance, likely because the extra parameters overfit on the small subset. UniXcoder consistently underperforms CodeBERT, suggesting its richer pretraining is more sensitive to fine-tuning conditions and small data. Our final Subtask~A model uses CodeBERT with stylometric features and tuned hyperparameters, achieving Macro~F1 = 0.40 (Table~\ref{tab:taskA_final}).
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabularx}{\columnwidth}{@{}X c c@{}}
+\toprule
+\textbf{Model} & \textbf{Acc.} & \textbf{Macro F1} \\
+\midrule
+CodeBERT (Baseline) & 0.40 & 0.39 \\
+CodeBERT + Stylometry + Tuning & 0.40 & 0.40 \\
+\bottomrule
+\end{tabularx}
+\caption{Subtask~A final model vs.\ baseline on the full validation set.}
+\label{tab:taskA_final}
+\end{table}
+
+\subsubsection{Subtask~B: Class Imbalance Mitigation}
+
+\paragraph{Experiment~1 (UniXcoder).} Using UniXcoder with sqrt-scaled class weights, cosine scheduling, and \texttt{HUMAN\_SUBSET\_SIZE}=20K, we achieved a peak Macro~F1 of \textbf{0.470} at epoch~5.7---a $>$2$\times$ improvement over the corrected baseline (0.22). However, validation loss diverged after epoch~3 (rising 22\% from 0.367 to 0.449), indicating overfitting.
+
+\paragraph{Experiment~2 (HP Search).} A $3{\times}2$ grid search (LRs: $1{\times}10^{-5}$, $2{\times}10^{-5}$, $5{\times}10^{-5}$; max lengths: 128, 256) identified optimal hyperparameters: LR=$2{\times}10^{-5}$, max\_length=256 (Macro~F1 = 0.368 in 2 epochs).
+
+\paragraph{Experiment~3 (Full Training).} Using the best configuration with enhanced regularization (label smoothing $\alpha{=}0.1$, weight decay 0.05, \texttt{HUMAN\_SUBSET\_SIZE}=40K), CodeBERT achieved Macro~F1 = \textbf{0.4203} in 5 epochs with \emph{monotonically decreasing} validation loss (1.551$\to$1.513), confirming that the regularization suite prevents overfitting (Table~\ref{tab:taskB_exp3_progress}).
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}c c c c@{}}
+\toprule
+\textbf{Epoch} & \textbf{Train Loss} & \textbf{Val.\ Loss} & \textbf{Macro F1} \\ \midrule
+1 & 3.544 & 1.551 & 0.360 \\
+2 & 3.247 & 1.578 & 0.368 \\
+3 & 3.029 & 1.525 & 0.400 \\
+4 & 2.875 & 1.514 & 0.417 \\
+5 & 2.799 & 1.513 & \textbf{0.420} \\
+\bottomrule
+\end{tabularx}
+\caption{Experiment~3 (CodeBERT, 5 epochs). Validation loss decreases throughout, unlike Experiment~1, confirming effective regularization.}
+\label{tab:taskB_exp3_progress}
+\end{table}
+
+Table~\ref{tab:taskB_comparison} summarizes the progression across all Subtask~B configurations.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}X c c@{}}
+\toprule
+\textbf{Configuration} & \textbf{F1} & \textbf{$\Delta$} \\ \midrule
+CodeBERT baseline (corrected) & $\sim$0.22 & --- \\
+UniXcoder + cls.\ wt.\ + sub-20K & 0.470 & +0.25 \\
+CodeBERT + cls.\ wt.\ + LS (HP, 2ep) & 0.368 & +0.15 \\
+CodeBERT + cls.\ wt.\ + LS (full, 5ep) & \textbf{0.420} & +0.20 \\
+\bottomrule
+\end{tabularx}
+\caption{Subtask~B experimental progression. ``cls.\ wt.'' = sqrt-scaled class weights, ``LS'' = label smoothing, ``sub-$N$K'' = human class capped at $N$K.}
+\label{tab:taskB_comparison}
+\end{table}
+
+\subsubsection{Subtask~C Baseline Reproduction}
+
+The Task~C CodeBERT baseline, trained on a 10\% subsample ($\sim$90K of 900K training samples) with max\_length=128 and standard cross-entropy loss, achieved Macro~F1 = 0.51 and accuracy = 0.81 on the validation subsample. The improved pipeline (Section~\ref{sec:taskC_method}) was designed and implemented but results were not obtained within the compute budget.\textsuperscript{*}
+
+\subsection{Negative Results}
+
+\paragraph{UniXcoder overfitting.} Despite achieving the highest raw Macro~F1 (0.470), UniXcoder exhibited clear overfitting: validation loss rose 22\% after epoch~3 while training loss continued decreasing. The model was prematurely terminated at epoch~5.72/10 due to disk quota exhaustion from excessive checkpoint storage. This makes the UniXcoder result the less reliable of our two best models, despite its higher peak score.
+
+\paragraph{BiLSTM and dense heads underperform.} Both BiLSTM and dense classification heads consistently degraded performance relative to the simple linear head across all data sizes tested (2K, 10K, 100K+). The additional parameters likely provide redundant representational capacity already captured by the transformer backbone, introducing noise rather than useful inductive bias.
+
+\paragraph{UniXcoder underperforms CodeBERT on Subtask~A.} UniXcoder's richer AST-aware pretraining does not yield advantages for binary code detection in our setting, underperforming CodeBERT by 12 Macro~F1 points on the ablation set. This suggests the AST signal is either already captured by CodeBERT's token-level representations or requires larger fine-tuning datasets to be beneficial.
+
+\subsection{Per-Class Analysis (Subtask~B)}
+
+Table~\ref{tab:taskB_perclass} presents per-class results for the best CodeBERT model (Experiment~3), revealing a clear stratification of LLM family detectability:
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}l c c c@{}}
+\toprule
+\textbf{Class} & \textbf{Prec.} & \textbf{Rec.} & \textbf{F1} \\ \midrule
+Human & 1.00 & 0.90 & 0.95 \\
+OpenAI & 0.45 & 0.83 & 0.59 \\
+IBM-Granite & 0.48 & 0.73 & 0.58 \\
+Phi & 0.50 & 0.51 & 0.50 \\
+BigCode & 0.40 & 0.62 & 0.48 \\
+Meta-LLaMA & 0.28 & 0.37 & 0.32 \\
+Gemma & 0.20 & 0.61 & 0.30 \\
+Qwen & 0.26 & 0.32 & 0.29 \\
+01-ai & 0.18 & 0.34 & 0.24 \\
+DeepSeek-AI & 0.12 & 0.46 & 0.20 \\
+Mistral & 0.14 & 0.26 & 0.19 \\ \midrule
+\textbf{Macro Avg.} & \textbf{0.36} & \textbf{0.54} & \textbf{0.42} \\
+\bottomrule
+\end{tabularx}
+\caption{Subtask~B per-class results (CodeBERT, Experiment~3, Macro~F1 = 0.4203).}
+\label{tab:taskB_perclass}
+\end{table}
+
+\begin{itemize}
+    \item \textbf{Easily detected} (F1 $\geq$ 0.48): OpenAI, IBM-Granite, Phi, BigCode---these families produce code with distinctive stylistic signatures.
+    \item \textbf{Moderately detected} (F1 0.24--0.35): Meta-LLaMA, Gemma, Qwen, 01-ai---partially distinguishable but frequently confused with each other or human code.
+    \item \textbf{Poorly detected} (F1 $\leq$ 0.20): DeepSeek-AI and Mistral---low precision (0.12--0.14) indicates their code closely mimics human patterns.
+\end{itemize}
+
+IBM-Granite exhibits asymmetric precision--recall (P=0.48, R=0.73), acting as a partial ``catch-all'' for ambiguous LLM code. The human class shows near-perfect precision (1.00) but 10\% of human code is misclassified as machine-generated, an expected artifact of stratified subsampling.
+
+\subsection{Ablation Studies}
+
+Table~\ref{tab:ablation} provides a qualitative assessment of each improvement's contribution to Subtask~B performance.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}l X@{}}
+\toprule
+\textbf{Component} & \textbf{Impact} \\ \midrule
+Bug fixes (B1--B6) & \textit{Essential}---correct metric and data flow. \\
+Sqrt class weights & \textbf{Critical}---without it, Macro~F1 $\approx$ 0.09. \\
+Stratified subsample & \textbf{High}---reduces human share from 88\% to $\sim$41\%. \\
+Label smoothing & \textbf{Moderate}---prevents overconfidence. \\
+Weight decay 0.05 & \textbf{Moderate}---controls overfitting. \\
+Cosine LR & \textbf{Moderate}---smooth decay suits imbalanced fine-tuning. \\
+Max len 256 & \textbf{Moderate}---+1.6--3.1\% Macro~F1 over len 128. \\
+Early stopping & \textbf{Preventative}---avoids overfitting. \\
+\bottomrule
+\end{tabularx}
+\caption{Qualitative ablation: estimated impact of each improvement on Subtask~B.}
+\label{tab:ablation}
+\end{table}
+
+\subsection{Challenges and Limitations}
+
+\paragraph{Compute constraints.} All experiments ran on a single T4 GPU (16\,GB VRAM) with Kaggle session limits (12 hours). This prevented us from: (a)~training on the full Subtask~C dataset with the improved pipeline, (b)~running GraphCodeBERT experiments requiring offline DFG extraction, and (c)~implementing the ensemble pipeline across models. Higher learning rates ($5{\times}10^{-5}$) and longer sequence lengths (512 for Subtask~B) were also partially blocked by timeout constraints.
+
+\paragraph{Class imbalance.} Despite our mitigation strategies, the extreme imbalance in Subtask~B remains the dominant challenge. Even with sqrt-scaled weights and subsampling, DeepSeek-AI and Mistral achieve F1 $\leq$ 0.20, suggesting that more aggressive approaches (hierarchical classification, advanced augmentation, or architectural changes) may be necessary.
+
+\paragraph{Generalization.} Our models are trained on only three programming languages in the algorithmic domain. Performance on unseen languages (Go, PHP, C\#) and unseen domains (research, production) is expected to degrade, as the model may learn language-specific syntactic patterns rather than universal authorship signals.
+
+\subsection{Ethics Considerations}
+
+Machine-generated code detection systems raise several ethical considerations. \textbf{False positives} can unfairly penalize human developers whose coding style resembles LLM output, with potential consequences in academic integrity or hiring contexts. \textbf{Bias amplification} may occur if detection models disproportionately flag code from certain programming traditions or educational backgrounds. \textbf{Arms race dynamics} are inherent: as detection improves, adversarial generation techniques will adapt, potentially marginalizing the detection utility. We emphasize that our system should be used as one signal among many, never as the sole basis for consequential decisions. The adversarial class in Subtask~C explicitly models this concern, and robust detection must account for intentional evasion.
+
+\subsection{Future Work}
+
+Several promising directions remain:
+\begin{enumerate}
+    \item \textbf{Extended training}: The monotonically decreasing validation loss in Experiment~3 suggests further gains with more epochs. Training beyond 5 epochs with the current regularization suite is the most immediate improvement.
+    \item \textbf{GraphCodeBERT with offline DFG pipeline}: Building an offline tree-sitter-based DFG extraction pipeline would enable GraphCodeBERT experiments that capture data-flow-level differences between human and machine code.
+    \item \textbf{Improved Subtask~C models}: Running the designed pipeline (focal loss, SupConLoss, Bi-LSTM head, UniXcoder backbone) on the full 900K training set with per-class threshold calibration.
+    \item \textbf{Ensemble methods}: Combining CodeBERT, UniXcoder, and GraphCodeBERT predictions via soft voting or stacking, leveraging their complementary pretraining objectives.
+    \item \textbf{Hierarchical classification}: For Subtask~B, a two-stage approach (binary human-vs-machine, then LLM family identification) may yield better minority-class performance.
+    \item \textbf{Cross-lingual evaluation}: Stratified analysis per programming language to determine whether models learn genuine authorship signals or exploit language-level distributional artifacts.
+\end{enumerate}
+
+\textsuperscript{*}Results not available for the improved Subtask~C configuration due to compute constraints.
+
+%------------------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+%------------------------------------------------------------------
+
+We presented the approach of team \textbf{Procastic Simulators} to SemEval-2026 Task~13 on detecting machine-generated code. Our key contributions are: (1)~identification and correction of six critical bugs in the provided baseline; (2)~a systematic approach to class imbalance through sqrt-scaled class-weighted cross-entropy loss, label smoothing, and stratified subsampling; (3)~rigorous hyperparameter search establishing the optimal configuration (LR=$2{\times}10^{-5}$, max\_length=256); and (4)~detailed per-class analysis revealing a clear hierarchy of LLM family detectability.
+
+On Subtask~B, our best CodeBERT model achieves Macro~F1 = 0.4203 with stable, non-overfitting training dynamics---a $>$90\% improvement over the corrected baseline ($\sim$0.22). UniXcoder reaches a higher peak (0.470) but with concerning overfitting. Per-class analysis reveals OpenAI (F1=0.59) and IBM-Granite (0.58) as the most detectable families, while DeepSeek-AI (0.20) and Mistral (0.19) remain challenging. On Subtask~A, CodeBERT with stylometric features achieves Macro~F1 = 0.40. On Subtask~C, we reproduced the baseline (Macro~F1 = 0.51) and designed an improved pipeline incorporating focal loss, supervised contrastive learning, and a Bi-LSTM head, which remains to be evaluated with sufficient compute.
+
+%------------------------------------------------------------------
+% Acknowledgements
+%------------------------------------------------------------------
+\section*{Acknowledgements}
+We thank the SemEval-2026 Task~13 organizers for providing the datasets and evaluation infrastructure. All experiments were conducted on Kaggle T4 GPU instances.
+
+\bibliography{custom}
+
+\end{document}

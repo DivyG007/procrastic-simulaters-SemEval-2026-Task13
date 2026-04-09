@@ -1,6 +1,6 @@
 # Update Log — GraphCodeBERT Task B Notebook
 
-**File Modified:** `Improved_Models/task_B/graphcodebert_task_b.ipynb`
+**File Modified:** `Improved_Models/task_B/taskb-best-performing-model.ipynb`
 
 **Date:** 2026-04-06
 

@@ -94,8 +94,6 @@ Notes:
 ---
 
 ## Minimal Project Pointers
-- Official scorer: `scorer.py`
-- Format checks: `format_checker.py`
 - Label maps: `dataset_format/task_A`, `dataset_format/task_B`, `dataset_format/task_C`
 - Baselines: `baselines/`
 - Improved experiments: `src/task_A/Improved_models`, `src/task_B/Improved_models`, `src/task_C/Improved_models`

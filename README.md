@@ -1,210 +1,149 @@
-# SemEval-2026 Task 13: Detecting Machine-Generated Code with Multiple Programming Languages, Generators, and Application Scenarios
+# SemEval-2026 Task 13 — Procrastic Simulators
 
-
-## Project Overview
-
-The **Procastic Simulators** project is an implementation for **SemEval-2026 Task 13**, focusing on detecting machine-generated code. This repository contains data loaders, baseline models, improved training notebooks, and evaluation scripts to tackle the challenge across multiple programming languages and LLM generators.
-
----
-
-## Repository Structure
-
-```text
-procastic-simulaters-SemEval-2026-Task13/
-├── baselines/              # Foundational starter notebooks
-│   ├── Kaggle_starters/    # Official Kaggle starter implementations
-│   ├── train.py            # Fine-tune CodeBERT for tasks A/B/C
-│   └── predict.py          # Script for batch inference
-├── Improved_Models/        # Advanced experiments and refined models
-│   ├── task_A/             # Stylometric and architectural improvements for Task A
-│   ├── task_B/             # Imbalance handling and fine-tuning for Task B
-│   └── ensemble_pipeline.ipynb # Self-contained Kaggle ensemble notebook
-├── modified_notebooks/     # Optimized versions with specific enhancements
-├── ensemble_pipeline.py    # Local CLI tool for ensemble prediction
-├── ensemble_notebook.py    # Utility module for notebook integration
-├── logs/                   # Training logs and experimental results
-├── scorer.py               # Official Macro F1-score calculator
-└── README.md               # Main project documentation
-```
-
-## 📓 Notebooks Overview
-
-### Subtask A: Binary Classification (Human vs. AI)
-
-| Notebook | Description |
-| :--- | :--- |
-| `baselines/Kaggle_starters/Task-A-Baseline-Full-Datset.ipynb` | A robust baseline for Task A using the full dataset. Implements a `CodeClassifierTrainer` capable of switching between standard transformer heads and BiLSTM-augmented heads. |
-| `baselines/Kaggle_starters/Task-A-Baseline-limited.ipynb` | An advanced baseline that introduces **15 hand-crafted stylometric features** integrated via gated fusion and attention pooling. |
-| `Improved_Notebooks/task-A/backbone_and_architecture_changes.ipynb` | Explores architectural modifications, specifically placing a **BiLSTM layer** between the transformer backbone and the classification head. |
-| `Improved_Notebooks/task-A/stylometric_feature_addition.ipynb` | Experimentation with various language-agnostic code features to complement semantic embeddings. |
-| `Improved_Notebooks/task-A/final_model.ipynb` | Production-ready implementation consolidating the most effective techniques for Task A. |
-
-### Subtask B: Multi-class Authorship Detection
-
-| Notebook | Description |
-| :--- | :--- |
-| `baselines/Kaggle_starters/Task-B-Baseline.ipynb` | Colab-optimized baseline for Task B, demonstrating HuggingFace dataset integration. |
-| `Improved_Notebooks/task-b/Task-B-Colab.ipynb` | Refined experimental notebook for Task B with optimized data processing for Colab. |
-| `modified_notebooks/task-b-phase-1 (1).ipynb` | Enhanced Task B model using **Weighted Cross-Entropy Loss** and **stratified subsampling** to handle class imbalance. |
-
-### Subtask C & Utilities
-
-| Notebook | Description |
-| :--- | :--- |
-| `baselines/Kaggle_starters/task-C-Baseline.ipynb` | Foundational 4-class classification baseline for Subtask C. |
-| `Improved_Notebooks/HuggingFace_DataLoaders.ipynb` | Utility for efficient loading and tokenization of large-scale code datasets. |
-| `Improved_Models/Inference_Notebook.ipynb` | Dedicated workspace for running inference and generating competition submissions. |
-
-### 🚀 Ensemble Pipeline (CodeBERT + GraphCodeBERT + UniXcoder)
-
-We implement a multi-model ensemble strategy using **Soft Voting**, **Weighted Averaging**, and **Rank Averaging** to combine predictions from three transformer backbones.
-
-| File | Description | Kaggle / Local |
-| :--- | :--- | :--- |
-| `Improved_Models/ensemble_pipeline.ipynb` | **Self-contained** Kaggle notebook. Trains all 3 models, optimizes weights, and runs ensemble. | ✅ **Best for Kaggle** |
-| `ensemble_pipeline.py` | Comprehensive CLI tool for local terminal-based pipeline execution. | 💻 **Local CLI** |
-| `ensemble_notebook.py` | Utility module to easily integrate ensemble logic into other notebooks. | 🛠️ **Utility** |
-
-> [!TIP]
-> If you are running on **Kaggle**, use `ensemble_pipeline.ipynb`. It defines all logic internally and does not require the external `.py` files.
+This repository contains our experiments for detecting machine-generated code across:
+- **Task A**: Human vs Machine (binary)
+- **Task B**: 11-way authorship attribution (Human + 10 LLM families)
+- **Task C**: Human / Machine / Hybrid / Adversarial
 
 ---
 
-## 🔍 Task Overview
+## Unified Interpretation Summary (Tasks A, B, C)
 
-The rise of generative models has made it increasingly difficult to distinguish machine-generated code from human-written code — especially across different programming languages, domains, and generation techniques. 
+### Shared takeaways
+- **In-distribution validation can be overly optimistic**; generalization is the real bottleneck.
+- **Macro F1** is the reliable metric across tasks with class imbalance or distribution shift.
+- Stronger results consistently came from:
+  - better imbalance handling (class weights, focal loss)
+  - richer heads (deep heads / BiLSTM / contrastive branches)
+  - robust optimization (LLRD, cosine schedule, calibrated thresholds)
 
-**SemEval-2026 Task 13** challenges participants to build systems that can **detect machine-generated code** under diverse conditions by evaluating generalization to unseen languages, generator families, and code application scenarios.
+### Task A (binary: Human vs Machine)
+- Baseline transformer models often reached **very high validation scores** but degraded on harder evaluation settings (unseen language/domain combinations).
+- Better-performing A variants emphasized:
+  - deeper classifier heads,
+  - stylometric/code-structure features,
+  - stronger regularization and loss shaping,
+  - and cleaner data pipelines.
+- Core interpretation: Task A is not just separability; it is **cross-distribution robustness**.
 
-The task consists of **three subtasks**:
+### Task B (11-way authorship attribution)
+- Main challenge is **extreme imbalance** (human class dominates heavily).
+- Vanilla cross-entropy setups were biased toward majority predictions.
+- Stronger B variants improved minority-family recall using:
+  - balanced/weighted losses,
+  - focal + supervised contrastive objectives,
+  - GraphCodeBERT/UniXcoder-style representations,
+  - layer-wise LR decay,
+  - and per-class threshold calibration.
+- Core interpretation: most gains came from **minority-class recoverability**, not raw accuracy.
 
----
-
-### Subtask A: Binary Machine-Generated Code Detection
-
-**Goal:**  
-Given a code snippet, predict whether it is:
-
-- **(i)** Fully **human-written**, or  
-- **(ii)** Fully **machine-generated**
-
-**Training Languages:** `C++`, `Python`, `Java`  
-**Training Domain:** `Algorithmic` (e.g., Leetcode-style problems)
-
-**Evaluation Settings:**
-
-| Setting                              | Language                | Domain                 |
-|--------------------------------------|-------------------------|------------------------|
-| (i) Seen Languages & Seen Domains    | C++, Python, Java       | Algorithmic            |
-| (ii) Unseen Languages & Seen Domains | Go, PHP, C#, C, JS      | Algorithmic            |
-| (iii) Seen Languages & Unseen Domains| C++, Python, Java       | Research, Production   |
-| (iv) Unseen Languages & Domains      | Go, PHP, C#, C, JS      | Research, Production   |
-
-**Dataset Size**: 
-- Train - 500K samples (238K Human-Written | 262K Machine-Generated)
-- Validation - 100K samples
-
-**Target Metric** - Macro F1-score (we will build the leaderboard based on it), but you are free to use whatever works best for your approach during training.
-
----
-
-###  Subtask B: Multi-Class Authorship Detection
-
-**Goal:**  
-Given a code snippet, predict its author:
-
-- **(i)** Human  
-- **(ii–xi)** One of 10 LLM families:
-  - `DeepSeek-AI`, `Qwen`, `01-ai`, `BigCode`, `Gemma`, `Phi`, `Meta-LLaMA`, `IBM-Granite`, `Mistral`, `OpenAI`
-
-**Evaluation Settings:**
-
-- **Seen authors**: Test-time generators appeared in training  
-- **Unseen authors**: Test-time generators are new but from known model families
-
-**Dataset Size**: 
-- Train - 500K samples (442K Human |4K DeepSeek-AI | 8K Qwen| 3K 01-ai |2 K BigCode |2K Gemma | 5K Phi | 8K Meta-LLaMA |8K IBM-Granite| 4K  Mistral   |10K OpenAI)
-- Validation - 100K samples
-
-**Target Metric** - Macro F1-score (we will build the leaderboard based on it), but you are free to use whatever works best for your approach during training.
+### Task C (4-way: Human/Machine/Hybrid/Adversarial)
+- Hardest classes are typically **Hybrid** and **Adversarial** because boundaries are subtle.
+- Baseline models were strongest on pure Human/Machine and weaker on mixed/deceptive patterns.
+- Improved approaches targeted this by combining:
+  - stronger backbones,
+  - sequence-aware heads (e.g., BiLSTM or deeper fusion heads),
+  - class-imbalance-aware losses,
+  - and contrastive separation.
+- Core interpretation: Task C requires modeling **fine-grained mixture signals**, not just source identity.
 
 ---
 
-### Subtask C: Hybrid Code Detection
+## How to Run (Best-Model Python Pipelines, Local)
 
-**Goal:**  
-Classify each code snippet as one of:
+> This section is intentionally only for the **pythonic best_model pipelines**.
 
-1. **Human-written**  
-2. **Machine-generated**  
-3. **Hybrid** — partially written or completed by LLM  
-4. **Adversarial** — generated via adversarial prompts or RLHF to mimic humans
+### 1) Task A best_model
+Location: `src/task_A/Improved_models/best_model`
 
-**Dataset Size**: 
-- Train - 900K samples (485K Human-written | 210K Machine-generated |  85K Hybrid | 118K Adversarial)
-- Validation - 200K samples
+What to set locally:
+- In `src/task_A/Improved_models/best_model/config.py`
+  - set `TRAIN_PARQUET` to your local train parquet path
+  - set `TEST_PARQUET` to your local test parquet path (optional)
+  - set `OUTPUT_DIR` to a local writable folder
 
-**Target Metric** - Macro F1-score (we will build the leaderboard based on it), but you are free to use whatever works best for your approach during training.
+Run:
+1. `cd src/task_A/Improved_models/best_model`
+2. `python3 main.py`
+
+Notes:
+- This pipeline does its own split/eval flow internally.
+- If `TEST_PARQUET` exists, it also runs official-test evaluation utilities.
+
+### 2) Task B best_model
+Location: `src/task_B/Improved_models/best_model`
+
+Install dependencies:
+- `pip install -r src/task_B/Improved_models/best_model/requirements.txt`
+
+Local data options:
+- Option A (recommended): place local parquet files and set in config
+  - `train_path`, `val_path`, `test_path` in `Config` (`config.py`)
+- Option B: keep defaults; pipeline auto-downloads from HuggingFace if local files are missing
+
+Important local tweak:
+- In `src/task_B/Improved_models/best_model/config.py`, change `output_dir` from Kaggle-style to a local path (for example: `./results_graphcodebert_taskB`).
+
+Run:
+1. `cd src/task_B/Improved_models/best_model`
+2. `python3 main.py`
+
+Notes:
+- Pipeline includes training, validation evaluation, threshold calibration, and submission generation.
 
 ---
 
-## 📁 Data Format
+## Minimal Project Pointers
+- Official scorer: `scorer.py`
+- Format checks: `format_checker.py`
+- Label maps: `dataset_format/task_A`, `dataset_format/task_B`, `dataset_format/task_C`
+- Baselines: `baselines/`
+- Improved experiments: `src/task_A/Improved_models`, `src/task_B/Improved_models`, `src/task_C/Improved_models`
 
-- All data will be released via:
-  - [Kaggle](https://www.kaggle.com/datasets/daniilor/semeval-2026-task13)  
-  - [HuggingFace Datasets](https://huggingface.co/datasets/DaniilOr/SemEval-2026-Task13)
-  - In this GitHub repo as `.parquet` file
+---
 
-- For each subtask:
-  - Dataset contains `code`,  `label` (which is label id), and additional meta-data such as programming language (`language`), and the `generator`.
-  - Label mappings (`label_to_id.json` and `id_to_label.json`) are provided in each task folder  
+## Notebook Map (Name → Key Features → Purpose)
 
+### Task A
 
-## Important Dates
-- ~~Sample data ready: 15 July 2025~~
-- ~~Training data ready: **1 September 2025**~~
-- **Evaluation data ready: 1 December 2025** (we already released the training and validation datasets) 
-- Evaluation data ready and evaluation start: 10 January 2026 (we will share private test data at this time)
-- Evaluation end: 24 January 2026
-- Paper submission due: 2nd of March 2026
-- Notification to authors: April 2026
-- Camera ready due April 2026
-- SemEval workshop Summer 2026 (co-located with a major NLP conference)
+| Notebook | Model key features / innovations | Purpose |
+|---|---|---|
+| [src/task_A/baseline/Task-A-Starter.ipynb](src/task_A/baseline/Task-A-Starter.ipynb) | Starter transformer pipeline | Quick sanity-check baseline |
+| [src/task_A/baseline/Task-A-Baseline-limited.ipynb](src/task_A/baseline/Task-A-Baseline-limited.ipynb) | Limited-data baseline setup | Fast iteration baseline |
+| [src/task_A/baseline/Task-A-Baseline-Full-Datset.ipynb](src/task_A/baseline/Task-A-Baseline-Full-Datset.ipynb) | Full-data baseline training | Reference full-data baseline |
+| [src/task_A/Improved_models/codebert_linear_with_features.ipynb](src/task_A/Improved_models/codebert_linear_with_features.ipynb) | CodeBERT + linear head + handcrafted features | Feature-fusion ablation |
+| [src/task_A/Improved_models/codebert_deep_head_with_features.ipynb](src/task_A/Improved_models/codebert_deep_head_with_features.ipynb) | CodeBERT + deep MLP head + features | Stronger feature-fusion variant |
+| [src/task_A/Improved_models/codebert_deephead_14_features.ipynb](src/task_A/Improved_models/codebert_deephead_14_features.ipynb) | Deep head with 14 stylometric/static features | Paper-inspired feature engineering run |
+| [src/task_A/Improved_models/codebert_deep_head_no_features_threshold_tuning.ipynb](src/task_A/Improved_models/codebert_deep_head_no_features_threshold_tuning.ipynb) | Deep head without extra features + threshold tuning | Decision-threshold calibration study |
+| [src/task_A/Improved_models/codebert_deep_head_threshold_calibration.ipynb](src/task_A/Improved_models/codebert_deep_head_threshold_calibration.ipynb) | Deep head + focal/regularized training + calibrated threshold | High-performance calibrated Task A run |
+| [src/task_A/Improved_models/graphcodebert_standard_overfitting.ipynb](src/task_A/Improved_models/graphcodebert_standard_overfitting.ipynb) | Standard GraphCodeBERT classifier | Explicit overfitting behavior check |
+| [src/task_A/Improved_models/graphcodebert_focal_loss_multidropout.ipynb](src/task_A/Improved_models/graphcodebert_focal_loss_multidropout.ipynb) | GraphCodeBERT + focal loss + multi-sample dropout | Main robust GraphCodeBERT improved model |
+| [src/task_A/Improved_models/graphcodebert_focal_loss_multidropout_outputs.ipynb](src/task_A/Improved_models/graphcodebert_focal_loss_multidropout_outputs.ipynb) | Same as above + saved outputs | Reproducibility/output snapshot |
+| [src/task_A/Improved_models/graphcodebert_lolo_cpp.ipynb](src/task_A/Improved_models/graphcodebert_lolo_cpp.ipynb) | LOLO (leave-one-language-out) split with C++ holdout | Cross-language generalization stress test |
+| [src/task_A/Improved_models/graphcodebert_meanpooling_lolo_javascript.ipynb](src/task_A/Improved_models/graphcodebert_meanpooling_lolo_javascript.ipynb) | Mean-pooling variant + LOLO with JavaScript holdout | Pooling/transfer robustness ablation |
+| [src/task_A/Improved_models/train_2k_bilstm_deephead_different_backbones.ipynb](src/task_A/Improved_models/train_2k_bilstm_deephead_different_backbones.ipynb) | BiLSTM/deep-head across multiple backbones | Backbone comparison under low-data setup |
+| [src/task_A/Improved_models/train_2k_smoothed_stylometric_feature_addition.ipynb](src/task_A/Improved_models/train_2k_smoothed_stylometric_feature_addition.ipynb) | Label smoothing + stylometric feature addition | Regularization + feature-addition ablation |
+| [src/task_A/Improved_models/ensemble_run.ipynb](src/task_A/Improved_models/ensemble_run.ipynb) | Multi-model ensembling pipeline | Aggregate predictions for stronger final output |
 
+### Task B
 
-## Citation
-Our task is based on enriched data from our previous works. Please, consider citing them, when using data from this task
+| Notebook | Model key features / innovations | Purpose |
+|---|---|---|
+| [src/task_B/baseline/Task-B-Baseline.ipynb](src/task_B/baseline/Task-B-Baseline.ipynb) | Baseline multiclass classifier | Task B baseline reference |
+| [src/task_B/Improved_models/task_b_codebert_colab_baseline.ipynb](src/task_B/Improved_models/task_b_codebert_colab_baseline.ipynb) | CodeBERT pipeline tuned for Colab workflow | Portable baseline/improved starting point |
+| [src/task_B/Improved_models/task_b_unixcoder_weighted_loss_hparam_search.ipynb](src/task_B/Improved_models/task_b_unixcoder_weighted_loss_hparam_search.ipynb) | UniXcoder + class-weighted loss + HP search | Main imbalance-aware UniXcoder pipeline |
+| [src/task_B/Improved_models/task_b_phase1_loss_comparison.ipynb](src/task_B/Improved_models/task_b_phase1_loss_comparison.ipynb) | Side-by-side loss comparisons | Compare weighted/focal-style objectives |
+| [src/task_B/Improved_models/task_b_phase1_codebert_unixcoder_weighted_loss_v1.ipynb](src/task_B/Improved_models/task_b_phase1_codebert_unixcoder_weighted_loss_v1.ipynb) | Early-phase CodeBERT/UniXcoder weighted-loss run | Phase-1 exploratory benchmark |
+| [src/task_B/Improved_models/task_b_phase1_unixcoder_weighted_loss_overfitting_v1.ipynb](src/task_B/Improved_models/task_b_phase1_unixcoder_weighted_loss_overfitting_v1.ipynb) | UniXcoder weighted-loss variant | Overfitting diagnosis (version 1) |
+| [src/task_B/Improved_models/task_b_phase1_unixcoder_weighted_loss_overfitting_v2.ipynb](src/task_B/Improved_models/task_b_phase1_unixcoder_weighted_loss_overfitting_v2.ipynb) | Same family with parameter/training changes | Overfitting diagnosis (version 2) |
+| [src/task_B/Improved_models/GraphCodeBert/graphcodebert_task_b_baseline.ipynb](src/task_B/Improved_models/GraphCodeBert/graphcodebert_task_b_baseline.ipynb) | GraphCodeBERT baseline for Task B | Backbone-specific baseline |
+| [src/task_B/Improved_models/GraphCodeBert/task_b_graphcodebert_focal_supcon_llrd_mixup.ipynb](src/task_B/Improved_models/GraphCodeBert/task_b_graphcodebert_focal_supcon_llrd_mixup.ipynb) | GraphCodeBERT + focal + SupCon + LLRD + mixup | Advanced imbalance/generalization pipeline |
+| [src/task_B/Improved_models/GraphCodeBert/task_b_graphcodebert_focal_supcon_llrd_mixup_best.ipynb](src/task_B/Improved_models/GraphCodeBert/task_b_graphcodebert_focal_supcon_llrd_mixup_best.ipynb) | Best-performing tuned variant of above | Final high-performing Task B run |
 
-Droid: A Resource Suite for AI-Generated Code Detection
-```
-@inproceedings{orel2025droid,
-  title={Droid: A resource suite for ai-generated code detection},
-  author={Orel, Daniil and Paul, Indraneil and Gurevych, Iryna and Nakov, Preslav},
-  booktitle={Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing},
-  pages={31251--31277},
-  year={2025}
-}
-```
+### Task C
 
-CoDet-M4: Detecting Machine-Generated Code in Multi-Lingual, Multi-Generator and Multi-Domain Settings
-```
-@inproceedings{orel-etal-2025-codet,
-    title = "{C}o{D}et-M4: Detecting Machine-Generated Code in Multi-Lingual, Multi-Generator and Multi-Domain Settings",
-    author = "Orel, Daniil  and
-      Azizov, Dilshod  and
-      Nakov, Preslav",
-    editor = "Che, Wanxiang  and
-      Nabende, Joyce  and
-      Shutova, Ekaterina  and
-      Pilehvar, Mohammad Taher",
-    booktitle = "Findings of the Association for Computational Linguistics: ACL 2025",
-    month = jul,
-    year = "2025",
-    address = "Vienna, Austria",
-    publisher = "Association for Computational Linguistics",
-    url = "https://aclanthology.org/2025.findings-acl.550/",
-    pages = "10570--10593",
-    ISBN = "979-8-89176-256-5",
-}
-```
+| Notebook | Model key features / innovations | Purpose |
+|---|---|---|
+| [src/task_C/baseline/task-C-Baseline.ipynb](src/task_C/baseline/task-C-Baseline.ipynb) | Baseline 4-class classifier | Task C baseline reference |
+| [src/task_C/Improved_models/task-C_improved.ipynb](src/task_C/Improved_models/task-C_improved.ipynb) | Improved Task C training setup | Better separation of Human/Machine/Hybrid/Adversarial |
 

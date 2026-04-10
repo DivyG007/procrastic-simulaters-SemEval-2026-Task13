@@ -52,6 +52,8 @@ This repository contains our experiments for detecting machine-generated code ac
 ## How to Run (Best-Model Python Pipelines, Local)
 
 > This section is intentionally only for the **pythonic best_model pipelines**.
+>
+> A copy of these run instructions is available in [instructions.md](instructions.md).
 
 ### 1) Task A best_model
 Location: `src/task_A/Improved_models/best_model`
@@ -144,4 +146,6 @@ Notes:
 |---|---|---|
 | [src/task_C/baseline/task-C-Baseline.ipynb](src/task_C/baseline/task-C-Baseline.ipynb) | Baseline 4-class classifier | Task C baseline reference |
 | [src/task_C/Improved_models/task-C_improved.ipynb](src/task_C/Improved_models/task-C_improved.ipynb) | Improved Task C training setup | Better separation of Human/Machine/Hybrid/Adversarial |
+
+*Footnote: Run the remaining non-best_model notebooks on Kaggle.*
 

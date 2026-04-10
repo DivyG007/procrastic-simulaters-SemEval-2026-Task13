@@ -1,0 +1,10 @@
+transformers==4.45.0
+huggingface_hub
+datasets
+scikit-learn
+accelerate
+scipy
+tqdm
+pandas
+numpy
+torch

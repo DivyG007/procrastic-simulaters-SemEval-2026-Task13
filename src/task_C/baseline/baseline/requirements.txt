@@ -1,0 +1,9 @@
+transformers==4.45.0
+huggingface_hub
+datasets
+scikit-learn
+tqdm
+pandas
+numpy
+torch
+pyarrow
